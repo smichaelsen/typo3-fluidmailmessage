@@ -1,0 +1,9 @@
+{
+	"name": "smichaelsen/typo3-fluidmailmessage",
+	"description": "Mail message class for TYPO3 that is rendered with fluid",
+	"autoload": {
+		"psr-4": {
+			"Smichaelsen\\FluidMailMessage\\": "Classes/"
+		}
+	}
+}
