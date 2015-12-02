@@ -13,12 +13,18 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext;
  * render and send a fluid template.
  * Before rendering you can ->setControllerContext() and ->assign() variables.
  */
-class FluidMailMessage extends MailMessage {
+class FluidMailMessage extends MailMessage
+{
 
     /**
      * @var \TYPO3\CMS\Extbase\Mvc\Controller\ControllerContext
      */
     protected $controllerContext;
+
+    /**
+     * @var array
+     */
+    protected $templateRootPaths;
 
     /**
      * @var \TYPO3\CMS\Fluid\View\StandaloneView
@@ -29,9 +35,18 @@ class FluidMailMessage extends MailMessage {
     /**
      * @param ControllerContext $controllerContext
      */
-    public function setControllerContext(ControllerContext $controllerContext) {
+    public function setControllerContext(ControllerContext $controllerContext)
+    {
         $this->controllerContext = $controllerContext;
         $this->view->setControllerContext($controllerContext);
+    }
+
+    /**
+     * @param array $templateRootPaths
+     */
+    public function setTemplateRootPaths(array $templateRootPaths)
+    {
+        $this->templateRootPaths = $templateRootPaths;
     }
 
     /**
@@ -40,7 +55,8 @@ class FluidMailMessage extends MailMessage {
      * @param string $key
      * @param mixed $value
      */
-    public function assign($key, $value) {
+    public function assign($key, $value)
+    {
         $this->view->assign($key, $value);
     }
 
@@ -49,7 +65,8 @@ class FluidMailMessage extends MailMessage {
      *
      * @param string $template
      */
-    public function render($template) {
+    public function render($template)
+    {
         $this->setTemplate($template);
         $content = $this->view->render();
         $this->setBody($content);
@@ -59,18 +76,32 @@ class FluidMailMessage extends MailMessage {
     /**
      * You can either provide a absolute template path or a template path
      * beginning with 'EXT:'.
+     *
      * If you have provided a ControllerContext (->setControllerContext()) you
      * can also just provide the file name when your template lies in
      * EXT:yourext/Resources/Private/Templates/Mail/
+     *
+     * If you have provided templateRootPaths (->setTemplateRootPaths)
+     *
      * And finally you can also provide the full template source as a string.
      *
      * @param string $template
      */
-    protected function setTemplate($template) {
+    protected function setTemplate($template)
+    {
         $possibleFullTemplatePaths = array(
-            GeneralUtility::getFileAbsFileName($template),
             $template,
+            GeneralUtility::getFileAbsFileName($template),
         );
+        if (!empty($this->templateRootPaths)) {
+            foreach ($this->templateRootPaths as $templateRootPath) {
+                $path = rtrim($templateRootPath, '/') . '/Mail/' . $template;
+                $possibleFullTemplatePaths[] = $path;
+                $possibleFullTemplatePaths[] = GeneralUtility::getFileAbsFileName($path);
+                $possibleFullTemplatePaths[] = $path . '.html';
+                $possibleFullTemplatePaths[] = GeneralUtility::getFileAbsFileName($path) . '.html';
+            }
+        }
         if ($this->controllerContext instanceof ControllerContext) {
             $possibleFullTemplatePaths[] = ExtensionManagementUtility::extPath($this->controllerContext->getRequest()->getControllerExtensionKey()) . 'Resources/Private/Templates/Mail/' . $template . '.html';
             $possibleFullTemplatePaths[] = ExtensionManagementUtility::extPath($this->controllerContext->getRequest()->getControllerExtensionKey()) . 'Resources/Private/Templates/Mail/' . $template;
